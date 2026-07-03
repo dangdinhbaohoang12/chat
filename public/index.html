@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LAN Chat Full</title>
+  <style>
+    :root{--bg1:#050816;--bg2:#0b1220;--panel:rgba(15,23,42,.78);--panel2:rgba(17,24,39,.92);--line:rgba(148,163,184,.18);--text:#e5eefc;--muted:#94a3b8;--brand:#60a5fa;--brand2:#7c3aed;--ok:#34d399;--warn:#fbbf24;--danger:#fb7185;--shadow:0 18px 60px rgba(0,0,0,.34);--radius:24px;}
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(circle at top left, rgba(96,165,250,.18), transparent 28%),radial-gradient(circle at top right, rgba(124,58,237,.16), transparent 24%),linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 52%,#111827 100%);}
+    .app{min-height:100vh;padding:18px;display:grid;grid-template-columns:360px 1fr;gap:18px}
+    .glass{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(16px);box-shadow:var(--shadow);border-radius:var(--radius)}
+    .sidebar{display:flex;flex-direction:column;min-height:calc(100vh - 36px);padding:18px;gap:14px}
+    .brand{display:flex;gap:12px;align-items:center}.badge-logo{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,var(--brand),var(--brand2));font-weight:800;color:#fff;box-shadow:0 12px 30px rgba(96,165,250,.25);flex:0 0 auto}.brand h1{margin:0;font-size:18px}.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}
+    .card{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:14px}.label{color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.tab,.button,.chip,.emoji,.iconbtn,.room-item,.user-item,.member-item,.mini-btn{cursor:pointer}
+    .tab{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);border-radius:14px;padding:10px 12px;font-weight:700}.tab.active{background:linear-gradient(135deg,var(--brand),var(--brand2));border:none}
+    .input,.button,.textarea{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);border-radius:14px;padding:12px 14px;outline:none;font-size:15px}.textarea{min-height:56px;max-height:160px;resize:vertical;line-height:1.45}
+    .input::placeholder,.textarea::placeholder{color:#7f8aa3}
+    .button{background:linear-gradient(135deg,var(--brand),var(--brand2));border:none;font-weight:800;transition:transform .15s ease, filter .15s ease}.button:hover{transform:translateY(-1px);filter:brightness(1.04)}
+    .mini-btn{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:7px 10px;font-size:12px}.mini-btn.danger{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.3)}.mini-btn.ok{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.3)}.mini-btn.warn{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3)}
+    .small{font-size:12px;color:var(--muted)} .row{display:flex;gap:10px}.row>*{flex:1}
+    .main{display:grid;grid-template-rows:auto auto 1fr auto;min-height:calc(100vh - 36px);overflow:hidden}
+    .topbar{padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.titlebox h2{margin:0;font-size:21px}.titlebox p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    .status{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 14px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.24);color:#bbf7d0;font-size:13px;white-space:nowrap}.dot{width:8px;height:8px;border-radius:999px;background:var(--ok);box-shadow:0 0 0 6px rgba(52,211,153,.12)}
+    .toolbar{padding:0 18px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}.chip{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);border-radius:999px;padding:10px 14px;font-size:13px;white-space:nowrap}.chip.active{background:rgba(96,165,250,.18);border-color:rgba(96,165,250,.45)}
+    .content{display:grid;grid-template-columns:1fr 360px;min-height:0;gap:0;overflow:hidden;border-top:1px solid var(--line)} .messages{overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px} .sidepanel{border-left:1px solid var(--line);padding:18px;overflow:auto;background:rgba(2,6,23,.20)}
+    .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.12em}.list{display:grid;gap:8px}
+    .user-item,.room-item,.member-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.03);transition:transform .15s ease, background .15s ease, border-color .15s ease}
+    .user-item:hover,.room-item:hover,.member-item:hover{transform:translateY(-1px);background:rgba(255,255,255,.05)} .user-item.active,.room-item.active,.member-item.active{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.5)}
+    .user-left{display:flex;align-items:center;gap:10px;min-width:0}.avatar{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(96,165,250,.25),rgba(124,58,237,.25));border:1px solid rgba(255,255,255,.1);font-size:13px;flex:0 0 auto}.name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}.sub{font-size:12px;color:var(--muted)}
+    .bubble{max-width:min(760px,88%);padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.04);box-shadow:0 8px 22px rgba(0,0,0,.14);animation:pop .16s ease;word-break:break-word}.bubble.me{margin-left:auto;background:linear-gradient(135deg,rgba(37,99,235,.24),rgba(124,58,237,.20));border-color:rgba(96,165,250,.22)}.bubble.private{background:rgba(15,23,42,.94);border-color:rgba(244,114,182,.18)}.bubble.system{max-width:100%;margin:0 auto;text-align:center;color:var(--muted);background:rgba(255,255,255,.025);font-style:italic}
+    .meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)} .meta strong{color:var(--text)} .text{white-space:pre-wrap;line-height:1.55;font-size:15px}
+    .replybox{border-left:3px solid var(--brand);padding:8px 10px;margin-bottom:8px;background:rgba(96,165,250,.08);border-radius:10px}
+    .attachment{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}.attachment img{max-width:100%;border-radius:14px;display:block;border:1px solid var(--line);cursor:pointer}
+    .filebox{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);text-decoration:none;color:inherit}
+    .composer{border-top:1px solid var(--line);background:rgba(2,6,23,.34);padding:14px 18px 18px}.composer-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}.badges{display:flex;gap:8px;flex-wrap:wrap}.badge{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--muted)}.typing{color:#cbd5e1;font-size:13px;min-height:18px}.emoji-bar{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.emoji{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);border-radius:12px;padding:8px 10px;font-size:16px}
+    .composer-row{display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:10px;align-items:stretch}.send{min-width:132px}.iconbtn{width:48px;height:48px;display:grid;place-items:center;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);font-size:18px}
+    .dropzone{outline:2px dashed transparent;outline-offset:-6px;transition:outline-color .15s ease, background .15s ease}.dropzone.dragover{background:rgba(96,165,250,.12);outline-color:rgba(96,165,250,.6)}
+    .auth-hidden{display:none !important}.divider{height:1px;background:var(--line);margin:12px 0}.room-settings{display:grid;gap:8px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;padding:12px}
+    .progress{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.bar{height:100%;width:0%;background:linear-gradient(135deg,var(--brand),var(--brand2));transition:width .12s ease}.hidden-label{font-size:11px;color:var(--muted)}.search-result{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.03);cursor:pointer}
+    @keyframes pop{from{transform:translateY(4px);opacity:.7}to{transform:translateY(0);opacity:1}}
+    @media (max-width:1080px){.app{grid-template-columns:1fr}.sidebar{min-height:auto}.main{min-height:70vh}.content{grid-template-columns:1fr}.sidepanel{border-left:none;border-top:1px solid var(--line)}}
+    @media (max-width:640px){.app{padding:10px;gap:10px}.sidebar,.topbar,.toolbar,.messages,.composer,.sidepanel{padding-left:12px;padding-right:12px}.composer-row{grid-template-columns:1fr}.send{min-width:0}.bubble{max-width:94%}.row{flex-direction:column}.iconbtn{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar glass">
+      <div class="brand"><div class="badge-logo">LC</div><div><h1>LAN Chat Full</h1><p>Chat LAN với vai trò, file, sửa, ghim, tìm kiếm</p></div></div>
+      <div class="card" id="authCard">
+        <div class="tabs"><button class="tab active" id="tabLogin">Đăng nhập</button><button class="tab" id="tabRegister">Đăng ký</button></div>
+        <div class="label">Tài khoản</div><input id="authUsername" class="input" placeholder="Tên đăng nhập" maxlength="24" />
+        <div style="height:10px"></div><div class="label">Mật khẩu</div><input id="authPassword" class="input" placeholder="Mật khẩu" type="password" maxlength="64" />
+        <div style="height:10px"></div><button id="authAction" class="button">Đăng nhập</button><div style="height:10px"></div><div class="small">Mật khẩu được mã hóa bằng bcrypt.</div><div id="authError" class="small" style="color:#fda4af;margin-top:8px;"></div>
+      </div>
+      <div class="card auth-hidden" id="profileCard">
+        <div class="label">Tài khoản</div><div style="display:flex;gap:10px;align-items:center;"><div class="avatar" id="meAvatar">ME</div><div style="min-width:0"><div id="meName" style="font-weight:800"></div><div class="small">Kết nối nội bộ qua LAN</div></div></div>
+        <div style="height:10px"></div><button id="logoutBtn" class="button" style="background:linear-gradient(135deg,#334155,#1f2937)">Đăng xuất</button>
+        <div style="height:10px"></div><div class="divider"></div>
+        <div class="label">Đổi mật khẩu</div><input id="oldPass" class="input" placeholder="Mật khẩu hiện tại" type="password" /><div style="height:8px"></div><input id="newPass" class="input" placeholder="Mật khẩu mới" type="password" /><div style="height:8px"></div><button id="changePassBtn" class="mini-btn ok">Đổi mật khẩu</button><div id="changePassMsg" class="small" style="margin-top:8px;"></div>
+      </div>
+      <div class="card auth-hidden" id="roomCreateCard">
+        <div class="label">Tạo phòng</div><input id="roomInput" class="input" placeholder="Tên phòng" maxlength="24" />
+        <div style="height:10px"></div><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><input id="roomHasPassword" type="checkbox" />Có mật khẩu</label>
+        <div style="height:8px"></div><input id="roomPassword" class="input" placeholder="Mật khẩu phòng" type="password" style="display:none" />
+        <div style="height:8px"></div><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><input id="roomHidden" type="checkbox" />Ẩn phòng khỏi danh sách</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><input id="roomApproval" type="checkbox" />Duyệt thành viên</label>
+        <div style="height:8px"></div><button id="createRoomBtn" class="button">Tạo & vào phòng</button>
+        <div class="small" style="margin-top:8px;">Người tạo phòng sẽ là trưởng nhóm.</div><div id="roomError" class="small" style="color:#fda4af;margin-top:8px;"></div>
+      </div>
+      <div class="card auth-hidden" id="myRoomsCard" style="flex:1;display:flex;flex-direction:column;min-height:0;"><div class="label">Phòng của bạn</div><div id="roomList" class="list" style="overflow:auto;min-height:0;"></div></div><div class="card auth-hidden" id="lobbyUsersCard" style="flex:1;display:flex;flex-direction:column;min-height:0;margin-top:12px;"><div class="label">Chat riêng trong Lobby</div><div class="small">Bấm tên người online để mở cuộc trò chuyện riêng.</div><div style="height:10px"></div><div id="lobbyUsersList" class="list" style="overflow:auto;min-height:0;"></div></div>
+    </aside>
+
+    <main class="main glass auth-hidden" id="mainApp">
+      <div class="topbar"><div class="titlebox"><h2 id="chatTitle">Phòng lobby</h2><p id="chatSubtitle">Tin nhắn công khai, riêng tư, sửa, thu hồi, ghim và tìm kiếm.</p></div><div class="status"><span class="dot"></span><span id="statusText">Đang kết nối...</span></div></div>
+      <div class="toolbar"><div class="chip active" id="publicModeChip">Phòng chung</div><div class="chip" id="privateModeChip">Chat riêng: chưa chọn</div><div class="chip" id="clearPrivateChip">Bỏ chọn riêng tư</div><div class="chip" id="roomRoleChip">Vai trò: ...</div></div>
+      <div class="content dropzone" id="dropzone">
+        <div id="messages" class="messages"></div>
+        <aside class="sidepanel">
+          <div class="card" id="privateQuickBox" style="margin-bottom:12px;">
+            <div class="section-title"><span>Chat riêng</span><span>Lobby</span></div>
+            <input id="privateUserInput" class="input" placeholder="Nhập tên người dùng..." />
+            <div style="height:8px"></div>
+            <button id="privateOpenBtn" class="mini-btn ok" style="width:100%;">Mở chat riêng</button>
+            <div style="height:8px"></div>
+            <div class="small">Bạn cũng có thể bấm người online bên dưới.</div>
+          </div>
+          <div class="section-title"><span>Tìm kiếm</span><span>Ctrl+F</span></div>
+          <input id="searchInput" class="input" placeholder="Tìm trong phòng hiện tại..." /><div style="height:8px"></div><button id="searchBtn" class="mini-btn">Tìm</button><div style="height:8px"></div><div id="searchResults" class="list"></div>
+
+          <div class="divider"></div>
+          <div class="section-title"><span>Người online</span><span>Lobby</span></div>
+          <div id="lobbyUsersPanel" class="list" style="max-height:220px; overflow:auto;"></div>
+          <div class="divider"></div>
+          <div class="section-title"><span>Ghim</span><span id="pinnedCount">0</span></div><div id="pinnedList" class="list"></div>
+          <div class="divider"></div>
+          <div class="section-title"><span>Phòng</span><span id="roomCount">0</span></div><div id="roomStateBox" class="room-settings"><div class="small">Chưa có thông tin phòng.</div></div>
+          <div class="divider"></div>
+          <div class="section-title"><span>Thành viên</span><span id="memberCount">0</span></div><div id="memberList" class="list"></div>
+          <div class="divider"></div>
+          <div class="section-title"><span>Chờ duyệt</span><span id="pendingCount">0</span></div><div id="pendingList" class="list"></div>
+        </aside>
+      </div>
+      <div class="composer">
+        <div class="composer-top"><div><div class="badges"><span class="badge" id="modeBadge">Chế độ: công khai</span><span class="badge" id="targetBadge">Chưa chọn người nhận</span></div><div class="typing" id="typingText"></div></div><div class="small" id="hintText">Đăng nhập để bắt đầu.</div></div>
+        <div id="replyBox" class="card auth-hidden" style="margin-bottom:10px; padding:10px 12px;"><div class="small" id="replyText"></div><button id="cancelReplyBtn" class="mini-btn">Hủy trả lời</button></div>
+        <div id="editBox" class="card auth-hidden" style="margin-bottom:10px; padding:10px 12px;"><div class="small" id="editText"></div><button id="cancelEditBtn" class="mini-btn">Hủy chỉnh sửa</button></div>
+        <div class="composer-row">
+          <textarea id="messageInput" class="textarea" placeholder="Nhập tin nhắn..."></textarea>
+          <button id="sendBtn" class="button send">Gửi</button>
+          <button id="attachBtn" class="iconbtn" title="Gửi file">📎</button>
+          <button id="folderBtn" class="iconbtn" title="Gửi thư mục">📁</button>
+          <button id="inviteBtn" class="iconbtn" title="Mời thành viên">➕</button>
+          <button id="roomActionsBtn" class="iconbtn" title="Tùy chọn phòng">⚙</button>
+        </div>
+        <div class="emoji-bar" id="emojiBar"><button class="emoji">😀</button><button class="emoji">😂</button><button class="emoji">😍</button><button class="emoji">👍</button><button class="emoji">🙏</button><button class="emoji">🔥</button><button class="emoji">🎉</button><button class="emoji">💬</button><button class="emoji">🚀</button></div>
+        <div class="progress" style="margin-top:10px;"><div id="uploadBar" class="bar"></div></div><div id="uploadLabel" class="hidden-label"></div>
+        <input id="fileInput" type="file" multiple hidden /><input id="folderInput" type="file" webkitdirectory directory multiple hidden />
+      </div>
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const state = { token: localStorage.getItem("lanfull_token") || "", user: null, socket: null, currentRoom: "lobby", privateTarget: null, privateTargetName: "", roomState: null, rooms: [], lobbyUsers: [], replyTo: null, editTarget: null, typingTimer: null };
+    const el = {
+      authCard: document.getElementById("authCard"), profileCard: document.getElementById("profileCard"), roomCreateCard: document.getElementById("roomCreateCard"), myRoomsCard: document.getElementById("myRoomsCard"), lobbyUsersCard: document.getElementById("lobbyUsersCard"), lobbyUsersList: document.getElementById("lobbyUsersList"), privateQuickBox: document.getElementById("privateQuickBox"), privateUserInput: document.getElementById("privateUserInput"), privateOpenBtn: document.getElementById("privateOpenBtn"), lobbyUsersPanel: document.getElementById("lobbyUsersPanel"), mainApp: document.getElementById("mainApp"),
+      tabLogin: document.getElementById("tabLogin"), tabRegister: document.getElementById("tabRegister"), authUsername: document.getElementById("authUsername"), authPassword: document.getElementById("authPassword"), authAction: document.getElementById("authAction"), authError: document.getElementById("authError"),
+      meAvatar: document.getElementById("meAvatar"), meName: document.getElementById("meName"), logoutBtn: document.getElementById("logoutBtn"), oldPass: document.getElementById("oldPass"), newPass: document.getElementById("newPass"), changePassBtn: document.getElementById("changePassBtn"), changePassMsg: document.getElementById("changePassMsg"),
+      roomInput: document.getElementById("roomInput"), roomHasPassword: document.getElementById("roomHasPassword"), roomPassword: document.getElementById("roomPassword"), roomHidden: document.getElementById("roomHidden"), roomApproval: document.getElementById("roomApproval"), createRoomBtn: document.getElementById("createRoomBtn"), roomError: document.getElementById("roomError"),
+      roomList: document.getElementById("roomList"), chatTitle: document.getElementById("chatTitle"), chatSubtitle: document.getElementById("chatSubtitle"), statusText: document.getElementById("statusText"),
+      publicModeChip: document.getElementById("publicModeChip"), privateModeChip: document.getElementById("privateModeChip"), clearPrivateChip: document.getElementById("clearPrivateChip"), roomRoleChip: document.getElementById("roomRoleChip"),
+      messages: document.getElementById("messages"), roomStateBox: document.getElementById("roomStateBox"), roomCount: document.getElementById("roomCount"), memberCount: document.getElementById("memberCount"), memberList: document.getElementById("memberList"), pendingCount: document.getElementById("pendingCount"), pendingList: document.getElementById("pendingList"),
+      pinnedCount: document.getElementById("pinnedCount"), pinnedList: document.getElementById("pinnedList"), searchInput: document.getElementById("searchInput"), searchBtn: document.getElementById("searchBtn"), searchResults: document.getElementById("searchResults"),
+      modeBadge: document.getElementById("modeBadge"), targetBadge: document.getElementById("targetBadge"), typingText: document.getElementById("typingText"), hintText: document.getElementById("hintText"), replyBox: document.getElementById("replyBox"), replyText: document.getElementById("replyText"), cancelReplyBtn: document.getElementById("cancelReplyBtn"), editBox: document.getElementById("editBox"), editText: document.getElementById("editText"), cancelEditBtn: document.getElementById("cancelEditBtn"),
+      messageInput: document.getElementById("messageInput"), sendBtn: document.getElementById("sendBtn"), attachBtn: document.getElementById("attachBtn"), folderBtn: document.getElementById("folderBtn"), inviteBtn: document.getElementById("inviteBtn"), roomActionsBtn: document.getElementById("roomActionsBtn"),
+      fileInput: document.getElementById("fileInput"), folderInput: document.getElementById("folderInput"), emojiBar: document.getElementById("emojiBar"), dropzone: document.getElementById("dropzone"), uploadBar: document.getElementById("uploadBar"), uploadLabel: document.getElementById("uploadLabel")
+    };
+    function esc(str){ return String(str ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
+    function avatarText(name){ const p=String(name||"A").trim().split(/\s+/); return ((p[0]?.[0]||"A")+(p[1]?.[0]||"")).toUpperCase(); }
+    function fmtTime(ts){ try{ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }catch{return "";} }
+    function showApp(){ el.authCard.classList.add("auth-hidden"); el.profileCard.classList.remove("auth-hidden"); el.roomCreateCard.classList.remove("auth-hidden"); el.myRoomsCard.classList.remove("auth-hidden"); el.mainApp.classList.remove("auth-hidden"); el.hintText.textContent="Sẵn sàng."; }
+    function setAuthError(msg){ el.authError.textContent = msg || ""; }
+    function setRoomError(msg){ el.roomError.textContent = msg || ""; }
+    function setChangeMsg(msg, ok=false){ el.changePassMsg.textContent = msg || ""; el.changePassMsg.style.color = ok ? "#bbf7d0" : "#fda4af"; }
+
+    let authMode="login";
+    function syncAuthTabs(){ el.tabLogin.classList.toggle("active", authMode==="login"); el.tabRegister.classList.toggle("active", authMode==="register"); el.authAction.textContent = authMode==="login" ? "Đăng nhập" : "Đăng ký"; setAuthError(""); }
+    el.tabLogin.onclick = ()=>{ authMode="login"; syncAuthTabs(); };
+    el.tabRegister.onclick = ()=>{ authMode="register"; syncAuthTabs(); };
+
+    async function api(path, body){
+      const res = await fetch(path, { method:"POST", headers: { "Content-Type":"application/json", Authorization:`Bearer ${state.token}` }, body: JSON.stringify(body) });
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.error || "Có lỗi xảy ra");
+      return data;
+    }
+    async function getApi(path){
+      const res = await fetch(path, { headers: { Authorization:`Bearer ${state.token}` }});
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.error || "Có lỗi xảy ra");
+      return data;
+    }
+
+    function setUploadProgress(pct, label=""){ el.uploadBar.style.width = `${Math.max(0,Math.min(100,pct))}%`; el.uploadLabel.textContent = label; }
+    function clearUploadProgress(){ el.uploadBar.style.width="0%"; el.uploadLabel.textContent=""; }
+
+    function updateComposerState(){
+      if (el.lobbyUsersList) renderLobbyUsers(state.lobbyUsers || []);
+      if (state.privateTarget){ el.modeBadge.textContent="Chế độ: nhắn riêng"; el.targetBadge.textContent=`Người nhận: ${state.privateTargetName}`; el.privateModeChip.textContent=`Chat riêng: ${state.privateTargetName}`; el.publicModeChip.classList.remove("active"); el.privateModeChip.classList.add("active"); }
+      else { el.modeBadge.textContent="Chế độ: công khai"; el.targetBadge.textContent="Chưa chọn người nhận"; el.privateModeChip.textContent="Chat riêng: chưa chọn"; el.publicModeChip.classList.add("active"); el.privateModeChip.classList.remove("active"); }
+      el.roomRoleChip.textContent = `Vai trò: ${state.roomState?.myRole || "guest"}`;
+    }
+
+    function openSocket(token){
+      if (state.socket) state.socket.disconnect();
+      state.socket = io({ auth:{ token } });
+
+      state.socket.on("connect", ()=>el.statusText.textContent="Đã kết nối máy chủ");
+      state.socket.on("disconnect", ()=>el.statusText.textContent="Mất kết nối");
+
+      state.socket.on("auth-success", ({user}) => {
+        state.user = user;
+        localStorage.setItem("lanfull_token", state.token);
+        el.meAvatar.textContent = avatarText(user.username);
+        el.meName.textContent = user.username;
+        showApp();
+        renderLobbyUsers(state.lobbyUsers || []);
+      });
+
+      state.socket.on("rooms-list", (rooms)=>{ state.rooms = rooms || []; renderRooms(state.rooms); });
+      state.socket.on("online-users", (users) => { state.lobbyUsers = (users || []).filter(u => u.id !== state.user?.id); renderLobbyUsers(state.lobbyUsers); });
+      state.socket.on("room-switched", ({room}) => {
+        state.currentRoom = room;
+        state.privateTarget = null;
+        state.privateTargetName = "";
+        state.replyTo = null;
+        state.editTarget = null;
+        el.messages.innerHTML = "";
+        el.chatTitle.textContent = `Phòng ${room}`;
+        if (room === "lobby") el.chatSubtitle.textContent = "Bấm vào người online bên trái để mở chat riêng ngay."; 
+        updateComposerState();
+        renderLobbyUsers(state.lobbyUsers || []);
+      });
+      state.socket.on("room-history", ({room,messages}) => {
+        if (room !== state.currentRoom) return;
+        el.messages.innerHTML = "";
+        (messages||[]).forEach(m => renderMessage(m));
+        scrollBottom();
+      });
+      state.socket.on("room-state", (data)=>{ state.roomState = data; renderRoomState(data); updateComposerState(); });
+      state.socket.on("new-message", (msg) => {
+        if (msg.room !== state.currentRoom) return;
+        renderMessage(msg, msg.sender_id === state.user.id);
+        if (msg.is_pinned) state.socket.emit("join-room", { room: state.currentRoom, password: "" });
+      });
+      state.socket.on("message-updated", (msg) => {
+        const old = document.querySelector(`[data-mid="${msg.id}"]`);
+        if (old) old.replaceWith(buildMessageElement(msg, msg.sender_id === state.user.id));
+        if (msg.is_pinned || msg.deleted_at) state.socket.emit("join-room", { room: state.currentRoom, password: "" });
+      });
+      state.socket.on("private-opened", ({user}) => {
+        state.privateTarget = user;
+        state.privateTargetName = user.username;
+        state.replyTo = null; state.editTarget = null;
+        el.chatTitle.textContent = `Nhắn riêng với ${user.username}`;
+        updateComposerState();
+        renderLobbyUsers(state.lobbyUsers || []);
+      });
+      state.socket.on("private-history", ({toUserId, messages}) => {
+        if (!state.privateTarget || state.privateTarget.id !== toUserId) return;
+        el.messages.innerHTML = ""; (messages||[]).forEach(m => renderMessage(m)); scrollBottom();
+      });
+      state.socket.on("private-message", (msg) => {
+        if (!state.privateTarget) return;
+        const ok = (msg.sender_id === state.user.id && msg.recipient_id === state.privateTarget.id) || (msg.sender_id === state.privateTarget.id && msg.recipient_id === state.user.id);
+        if (!ok) return;
+        renderMessage(msg, msg.sender_id === state.user.id);
+      });
+      state.socket.on("typing-room", (d) => { if (!state.privateTarget && d.fromUserId !== state.user.id) el.typingText.textContent = d.isTyping ? `${d.fromUsername} đang nhập...` : ""; });
+      state.socket.on("typing-private", (d) => { if (state.privateTarget && d.fromUserId !== state.user.id) el.typingText.textContent = d.isTyping ? `${d.fromUsername} đang nhập...` : ""; });
+
+      state.socket.on("room-error", msg => setRoomError(msg || "Có lỗi xảy ra"));
+      state.socket.on("room-notice", msg => setRoomError(msg?.message || ""));
+      state.socket.on("room-pending", msg => setRoomError(msg?.message || ""));
+      state.socket.on("room-invited", msg => setRoomError(`Bạn được mời vào phòng ${msg.room}`));
+      state.socket.on("room-approved", msg => setRoomError(`Bạn đã được duyệt vào phòng ${msg.room}`));
+      state.socket.on("room-kicked", msg => setRoomError(`Bạn đã bị kick khỏi phòng ${msg.room}`));
+      state.socket.on("room-deleted", msg => setRoomError(`Nhóm ${msg.room} đã bị xoá.`));
+    }
+
+    function renderLobbyUsers(users){
+      if (!el.lobbyUsersList) return;
+      el.lobbyUsersList.innerHTML = "";
+      if (!users || !users.length) {
+        el.lobbyUsersList.innerHTML = '<div class="small">Chưa có ai khác đang online.</div>';
+        return;
+      }
+      users.forEach(u => {
+        const item = document.createElement("div");
+        item.className = "user-item";
+        item.innerHTML = `<div class="user-left"><div class="avatar">${esc(avatarText(u.username))}</div><div style="min-width:0"><div class="name">${esc(u.username)}</div><div class="sub">Nhắn riêng trong lobby</div></div></div><div class="badge">Online</div>`;
+        item.onclick = () => {
+          state.privateTarget = u;
+          state.privateTargetName = u.username;
+          updateComposerState();
+          state.socket.emit("open-private", { toUserId: u.id });
+        };
+        el.lobbyUsersList.appendChild(item);
+      });
+    }
+
+    function renderRooms(rooms){
+      el.roomList.innerHTML = "";
+      el.roomCount.textContent = rooms.length;
+      rooms.forEach(room => {
+        const item = document.createElement("div");
+        item.className = "room-item" + (room.name === state.currentRoom && !state.privateTarget ? " active" : "");
+        item.innerHTML = `<div style="min-width:0"><div class="name">#${esc(room.name)} ${room.hasPassword ? "🔒" : "🌍"} ${room.hidden ? "🙈" : ""}</div><div class="sub">${room.hidden ? "Phòng ẩn" : room.hasPassword ? "Có mật khẩu" : "Công khai"} ${room.myRole ? "• " + esc(room.myRole) : ""}</div></div><div class="badge">${room.pending ? "Chờ" : room.hasPassword ? "Khóa" : "Mở"}</div>`;
+        item.onclick = () => {
+          state.privateTarget = null;
+          state.privateTargetName = "";
+          updateComposerState();
+          const pass = room.hasPassword ? prompt(`Nhập mật khẩu cho phòng #${room.name}`) : "";
+          state.socket.emit("join-room", { room: room.name, password: pass || "" });
+        };
+        el.roomList.appendChild(item);
+      });
+    }
+
+    function renderRoomState(st){
+      if (!st) return;
+      const m = st.members || [], p = st.pending || [], pin = st.pinned || [];
+      el.memberCount.textContent = m.length; el.pendingCount.textContent = p.length; el.pinnedCount.textContent = pin.length;
+      el.roomStateBox.innerHTML = `
+        <div><b>Phòng:</b> ${esc(st.room.name || "")}</div>
+        <div><b>Ẩn:</b> ${st.room.visibility === "hidden" ? "Có" : "Không"}</div>
+        <div><b>Mật khẩu:</b> ${st.room.hasPassword ? "Có" : "Không"}</div>
+        <div><b>Duyệt:</b> ${st.room.approvalMode ? "Bật" : "Tắt"}</div>
+        <div><b>Vai trò của bạn:</b> ${esc(st.myRole || "guest")}</div>
+        <div class="small">Trưởng nhóm: tạo phòng. Phó nhóm: do trưởng nhóm chỉ định.</div>
+        <div class="small">Phó nhóm là tùy chọn; phòng có thể không có phó nhóm nào.</div>
+        <div class="small">Quyền phó nhóm: mời, kick thành viên thường, duyệt, ghim, quản lý file.</div>
+        <div class="row" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+          ${st.controls.canRename ? '<button class="mini-btn" id="renameRoomBtn">Đổi tên</button>' : ''}
+          ${st.controls.canChangePassword ? '<button class="mini-btn" id="passRoomBtn">Đổi mật khẩu</button>' : ''}
+          ${st.controls.canHide ? `<button class="mini-btn" id="hideRoomBtn">${st.room.visibility === "hidden" ? "Hiện phòng" : "Ẩn phòng"}</button>` : ''}
+          ${st.controls.canToggleApproval ? `<button class="mini-btn warn" id="toggleApproveBtn">${st.room.approvalMode ? "Tắt duyệt" : "Bật duyệt"}</button>` : ''}
+          ${st.controls.canTransfer ? '<button class="mini-btn ok" id="transferBtn">Chuyển trưởng</button>' : ''}
+          ${st.controls.canDelete ? '<button class="mini-btn danger" id="deleteRoomBtn">Xóa nhóm</button>' : ''}
+        </div>
+        ${st.controls.canInvite ? '<div style="height:8px"></div><input id="inviteNameInput" class="input" placeholder="Mời người dùng theo tên" /><button id="inviteSendBtn" class="mini-btn ok" style="margin-top:8px;">Mời</button>' : ''}
+      `;
+      el.roomRoleChip.textContent = `Vai trò: ${st.myRole || "guest"}`;
+      el.pinnedList.innerHTML = "";
+      pin.forEach(pp => {
+        const node = document.createElement("div");
+        node.className = "search-result";
+        node.innerHTML = `<div><b>📌 ${esc(pp.sender_name)}</b></div><div class="small">${esc(pp.message)}</div>`;
+        node.onclick = () => scrollToMessage(pp.id);
+        el.pinnedList.appendChild(node);
+      });
+
+      el.memberList.innerHTML = "";
+      m.forEach(mem => {
+        const item = document.createElement("div");
+        item.className = "member-item" + (mem.id === state.user?.id ? " active" : "");
+        item.innerHTML = `
+          <div class="user-left">
+            <div class="avatar">${esc(avatarText(mem.username))}</div>
+            <div style="min-width:0">
+              <div class="name">${esc(mem.username)} ${mem.role === "leader" ? "👑" : mem.role === "deputy" ? "⭐" : ""}</div>
+              <div class="sub">${mem.online ? "Online" : "Offline"} • ${esc(mem.role)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+            ${st.controls.canPromote && mem.role !== "leader" ? (mem.role === "deputy" ? `<button class="mini-btn warn" data-act="remove-deputy" data-id="${mem.id}">Bỏ phó</button>` : `<button class="mini-btn warn" data-act="set-deputy" data-enabled="true" data-id="${mem.id}">Làm phó</button>`) : ''}
+            ${st.controls.canTransfer && mem.role !== "leader" ? `<button class="mini-btn ok" data-act="owner" data-id="${mem.id}">Chuyển trưởng</button>` : ''}
+            ${st.controls.canKick && mem.id !== state.user?.id ? `<button class="mini-btn danger" data-act="kick" data-id="${mem.id}">Kick</button>` : ''}
+          </div>
+        `;
+        item.onclick = (e) => {
+          if (e.target.closest("button")) return;
+          if (mem.id !== state.user?.id) state.socket.emit("open-private", { toUserId: mem.id });
+        };
+        el.memberList.appendChild(item);
+      });
+
+      el.pendingList.innerHTML = "";
+      p.forEach(req => {
+        const item = document.createElement("div");
+        item.className = "member-item";
+        item.innerHTML = `<div class="user-left"><div class="avatar">${esc(avatarText(req.username))}</div><div><div class="name">${esc(req.username)}</div><div class="sub">Đang chờ duyệt</div></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${st.controls.canApprove ? `<button class="mini-btn ok" data-act="approve" data-id="${req.userId}">Duyệt</button><button class="mini-btn danger" data-act="reject" data-id="${req.userId}">Từ chối</button>` : ''}</div>`;
+        el.pendingList.appendChild(item);
+      });
+
+      [...el.roomStateBox.querySelectorAll("[data-act]"), ...el.memberList.querySelectorAll("[data-act]"), ...el.pendingList.querySelectorAll("[data-act]")].forEach(btn => {
+        btn.onclick = () => {
+          const act = btn.dataset.act;
+          const id = Number(btn.dataset.id);
+          const room = st.room.name;
+          if (act === "kick") state.socket.emit("kick-member", { room, userId: id });
+          if (act === "set-deputy") state.socket.emit("set-deputy", { room, userId: id, enabled: btn.dataset.enabled === "true" });
+          if (act === "remove-deputy") state.socket.emit("remove-deputy", { room, userId: id });
+          if (act === "owner") state.socket.emit("transfer-owner", { room, userId: id });
+          if (act === "approve") state.socket.emit("approve-member", { room, userId: id });
+          if (act === "reject") state.socket.emit("reject-member", { room, userId: id });
+        };
+      });
+      const inviteBtn = document.getElementById("inviteSendBtn");
+      const inviteInput = document.getElementById("inviteNameInput");
+      if (inviteBtn && inviteInput) inviteBtn.onclick = () => { if (inviteInput.value.trim()) state.socket.emit("invite-member", { room: st.room.name, username: inviteInput.value.trim() }); };
+      const renameBtn = document.getElementById("renameRoomBtn");
+      if (renameBtn) renameBtn.onclick = () => { const nn = prompt("Tên phòng mới:", st.room.name); if (nn) state.socket.emit("rename-room", { room: st.room.name, newName: nn }); };
+      const passBtn = document.getElementById("passRoomBtn");
+      if (passBtn) passBtn.onclick = () => { const pw = prompt("Mật khẩu mới (để trống nếu bỏ mật khẩu):", ""); state.socket.emit("set-room-password", { room: st.room.name, password: pw || "" }); };
+      const hideBtn = document.getElementById("hideRoomBtn");
+      if (hideBtn) hideBtn.onclick = () => state.socket.emit("toggle-room-hidden", { room: st.room.name, hidden: st.room.visibility !== "hidden" });
+      const toggleBtn = document.getElementById("toggleApproveBtn");
+      if (toggleBtn) toggleBtn.onclick = () => state.socket.emit("toggle-approval", { room: st.room.name });
+      const transferBtn = document.getElementById("transferBtn");
+      if (transferBtn) transferBtn.onclick = () => { const name = prompt("Nhập tên người muốn chuyển quyền trưởng nhóm:"); const mem = m.find(x => x.username === name); if (mem) state.socket.emit("transfer-owner", { room: st.room.name, userId: mem.id }); };
+      const deleteBtn = document.getElementById("deleteRoomBtn");
+      if (deleteBtn) deleteBtn.onclick = () => { if (confirm(`Xóa nhóm ${st.room.name}?`)) state.socket.emit("delete-room", { room: st.room.name }); };
+    }
+
+    function buildReplyPreview(replyPreview, replyToId){ if (!replyPreview && !replyToId) return ""; return `<div class="replybox"><div class="small">Trả lời: <b>${esc(replyPreview?.sender_name || "Ai đó")}</b></div><div class="small">${esc(replyPreview?.message || "")}</div></div>`; }
+    function renderAttachments(attachments){ if (!attachments || !attachments.length) return ""; return attachments.map(att => { const down = `<a href="${esc(att.url)}" download class="badge" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">⬇ Tải xuống</a>`; if (att.isImage) return `<div class="attachment"><img src="${esc(att.url)}" alt="${esc(att.name)}" /><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">${down}<span class="badge">${Math.round((att.size||0)/1024)} KB</span></div></div>`; return `<div class="attachment"><div class="filebox"><div style="font-size:22px;">${att.kind === "folder" ? "📁" : "📄"}</div><div style="min-width:0;flex:1;"><div style="font-weight:700">${esc(att.name)}</div><div class="small">${Math.round((att.size||0)/1024)} KB</div></div>${down}</div></div>`; }).join(""); }
+    function buildMessageElement(msg, isMe=false){
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.dataset.mid = msg.id;
+      if (msg.recipient_id) bubble.classList.add("private");
+      if (isMe) bubble.classList.add("me");
+      if (msg.deleted_at) bubble.classList.add("system");
+      const canAdmin = ["leader","deputy"].includes(state.roomState?.myRole || "");
+      const actions = [];
+      if (!msg.deleted_at) {
+        actions.push(`<button class="mini-btn" data-act="reply">Trả lời</button>`);
+        if (isMe || canAdmin) actions.push(`<button class="mini-btn" data-act="edit">Sửa</button>`);
+        if (isMe || canAdmin) actions.push(`<button class="mini-btn danger" data-act="revoke">Thu hồi</button>`);
+        if (canAdmin) actions.push(`<button class="mini-btn warn" data-act="pin">${msg.is_pinned ? "Bỏ ghim" : "Ghim"}</button>`);
+      }
+      if (msg.deleted_at) bubble.innerHTML = `<div class="meta"><div><strong>${esc(msg.sender_name||"Ẩn danh")}</strong></div><div>${esc(fmtTime(msg.created_at))}</div></div><div class="text">Tin nhắn đã bị thu hồi</div>`;
+      else bubble.innerHTML = `<div class="meta"><div><strong>${esc(msg.sender_name||"Ẩn danh")}</strong> <span class="small">• ${msg.recipient_id ? (isMe ? "Bạn → " + esc(msg.recipient_name || "") : esc(msg.sender_name || "") + " → Bạn") : "Công khai"} ${msg.is_pinned ? "• 📌" : ""}</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${actions.join("")}<span>${esc(fmtTime(msg.created_at))}</span></div></div>${msg.reply_preview ? buildReplyPreview(msg.reply_preview, msg.reply_to_id) : ""}${msg.edited_at ? `<div class="small">(đã chỉnh sửa)</div>` : ""}${msg.message ? `<div class="text">${esc(msg.message)}</div>` : ""}${renderAttachments(msg.attachments || [])}`;
+      bubble.querySelectorAll("[data-act]").forEach(btn => { btn.onclick = () => { const a = btn.dataset.act; if (a==="reply") startReply(msg); if (a==="edit") startEdit(msg); if (a==="revoke") state.socket.emit("revoke-message", { messageId: msg.id }); if (a==="pin") state.socket.emit("pin-message", { messageId: msg.id, pin: !msg.is_pinned }); }; });
+      bubble.querySelectorAll("img").forEach(img => img.onclick = () => window.open(img.src, "_blank"));
+      return bubble;
+    }
+    function renderMessage(msg, isMe=false){ el.messages.appendChild(buildMessageElement(msg, isMe)); scrollBottom(); }
+    function scrollBottom(){ el.messages.scrollTop = el.messages.scrollHeight; }
+    function scrollToMessage(id){ const n = document.querySelector(`[data-mid="${id}"]`); if (n){ n.scrollIntoView({behavior:"smooth", block:"center"}); n.classList.add("active"); setTimeout(()=>n.classList.remove("active"), 1200); } }
+    function renderSearchResults(results){ el.searchResults.innerHTML = ""; if (!results.length){ el.searchResults.innerHTML = '<div class="small">Không tìm thấy kết quả.</div>'; return; } results.forEach(m => { const d=document.createElement("div"); d.className="search-result"; d.innerHTML=`<div><b>${esc(m.sender_name)}</b> <span class="small">${esc(fmtTime(m.created_at))}</span></div><div class="small">${esc((m.message || "[đính kèm]").slice(0, 140))}</div>`; d.onclick=()=>scrollToMessage(m.id); el.searchResults.appendChild(d); }); }
+    function startReply(msg){ state.replyTo = msg; el.replyBox.classList.remove("auth-hidden"); el.replyText.innerHTML = `<b>Trả lời:</b> ${esc(msg.sender_name)} — ${esc((msg.message || "[đính kèm]").slice(0, 90))}`; el.messageInput.focus(); }
+    function clearReply(){ state.replyTo = null; el.replyBox.classList.add("auth-hidden"); }
+    function startEdit(msg){ state.editTarget = msg; el.editBox.classList.remove("auth-hidden"); el.editText.innerHTML = `<b>Chỉnh sửa:</b> ${esc(msg.sender_name)} — ${esc((msg.message || "").slice(0, 90))}`; el.messageInput.value = msg.message || ""; el.messageInput.focus(); }
+    function clearEdit(){ state.editTarget = null; el.editBox.classList.add("auth-hidden"); el.messageInput.value = ""; }
+    function insertEmoji(emoji){ const s = el.messageInput.selectionStart || 0, e = el.messageInput.selectionEnd || 0, v = el.messageInput.value; el.messageInput.value = v.slice(0,s) + emoji + v.slice(e); el.messageInput.focus(); el.messageInput.setSelectionRange(s+emoji.length, s+emoji.length); triggerTyping(); }
+    function triggerTyping(){ if (!state.socket || !state.user) return; clearTimeout(state.typingTimer); state.socket.emit("typing", { isTyping: true, room: state.currentRoom, toUserId: state.privateTarget ? state.privateTarget.id : null }); state.typingTimer = setTimeout(() => state.socket.emit("typing", { isTyping: false, room: state.currentRoom, toUserId: state.privateTarget ? state.privateTarget.id : null }), 900); }
+    async function uploadWithProgress(url, formData){ return new Promise((resolve, reject) => { const xhr = new XMLHttpRequest(); xhr.open("POST", url); xhr.setRequestHeader("Authorization", `Bearer ${state.token}`); xhr.upload.onprogress = (e) => { if (e.lengthComputable) { const pct = Math.round((e.loaded / e.total) * 100); setUploadProgress(pct, `Đang tải lên: ${pct}%`); } }; xhr.onload = () => { clearUploadProgress(); try { const data = JSON.parse(xhr.responseText || "{}"); if (xhr.status >= 200 && xhr.status < 300) resolve(data); else reject(new Error(data.error || "Upload thất bại")); } catch { reject(new Error("Upload thất bại")); } }; xhr.onerror = () => { clearUploadProgress(); reject(new Error("Upload thất bại")); }; xhr.send(formData); }); }
+    async function uploadFile(file){ const f=new FormData(); f.append("file", file); const d=await uploadWithProgress("/api/upload/file", f); return d.attachment ? [d.attachment] : []; }
+    async function uploadFiles(files){ const f=new FormData(); Array.from(files).forEach(x => f.append("files", x, x.name)); const d=await uploadWithProgress("/api/upload/files", f); return d.attachments || []; }
+    async function uploadFolder(files){ const f=new FormData(); const manifest = Array.from(files).map(x => ({ relativePath: x.webkitRelativePath || x.name })); f.append("folderName", (manifest[0]?.relativePath || "folder").split("/")[0] || "folder"); f.append("manifest", JSON.stringify(manifest)); Array.from(files).forEach(x => f.append("files", x, x.name)); const d=await uploadWithProgress("/api/upload/folder", f); return d.attachment ? [d.attachment] : []; }
+    async function sendCurrentMessage(){ const text = el.messageInput.value.trim(); if (state.editTarget){ state.socket.emit("edit-message", { messageId: state.editTarget.id, message: text }); clearEdit(); return; } const replyToId = state.replyTo ? state.replyTo.id : null; if (!text && !replyToId) return; const payload = { message: text, replyToId, attachments: [] }; if (state.privateTarget) state.socket.emit("send-private", { toUserId: state.privateTarget.id, ...payload }); else state.socket.emit("send-message", { room: state.currentRoom, ...payload }); el.messageInput.value=""; clearReply(); el.messageInput.style.height="56px"; state.socket.emit("typing", { isTyping:false, room: state.currentRoom, toUserId: state.privateTarget ? state.privateTarget.id : null }); }
+    function initComposerState(){ updateComposerState(); }
+
+    el.authAction.onclick = async () => { try { const username = el.authUsername.value.trim(); const password = el.authPassword.value; const endpoint = authMode==="login" ? "/api/login" : "/api/register"; const data = await api(endpoint, { username, password }); state.token = data.token; state.user = data.user; openSocket(state.token); } catch(err){ setAuthError(err.message || "Có lỗi xảy ra"); } };
+    el.logoutBtn.onclick = () => { localStorage.removeItem("lanfull_token"); state.token=""; state.user=null; if (state.socket) state.socket.disconnect(); location.reload(); };
+    el.changePassBtn.onclick = async () => { try { await api("/api/change-password", { currentPassword: el.oldPass.value, newPassword: el.newPass.value }); setChangeMsg("Đã đổi mật khẩu.", true); el.oldPass.value=""; el.newPass.value=""; } catch(err){ setChangeMsg(err.message || "Không thể đổi mật khẩu"); } };
+    el.publicModeChip.onclick = () => { state.privateTarget = null; state.privateTargetName = ""; el.typingText.textContent = ""; if (state.socket) state.socket.emit("join-room", { room: state.currentRoom, password: "" }); updateComposerState(); renderLobbyUsers(state.lobbyUsers || []); };
+    el.clearPrivateChip.onclick = el.publicModeChip.onclick;
+    el.sendBtn.onclick = sendCurrentMessage;
+    el.cancelReplyBtn.onclick = clearReply;
+    el.cancelEditBtn.onclick = clearEdit;
+    el.searchBtn.onclick = async () => { try { const q = el.searchInput.value.trim(); if (!q) return; const room = state.privateTarget ? `private:${state.privateTarget.id}` : state.currentRoom; const res = await getApi(`/api/search?room=${encodeURIComponent(room)}&q=${encodeURIComponent(q)}`); renderSearchResults(res.results || []); } catch(err){ setRoomError(err.message || "Tìm kiếm thất bại"); } };
+    el.searchInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") el.searchBtn.click(); });
+    el.createRoomBtn.onclick = () => { const room = el.roomInput.value.trim(); if (!room) return; state.socket.emit("create-room", { room, password: el.roomHasPassword.checked ? el.roomPassword.value : "", hidden: el.roomHidden.checked, approvalMode: el.roomApproval.checked }); el.roomInput.value=""; el.roomPassword.value=""; el.roomHasPassword.checked=false; el.roomPassword.style.display="none"; el.roomHidden.checked=false; el.roomApproval.checked=false; };
+    el.roomHasPassword.addEventListener("change", () => { el.roomPassword.style.display = el.roomHasPassword.checked ? "block" : "none"; });
+    el.inviteBtn.onclick = () => { if (!state.roomState?.controls?.canInvite) return alert("Bạn không có quyền mời."); const name = prompt("Tên người dùng để mời:"); if (name) state.socket.emit("invite-member", { room: state.currentRoom, username: name }); };
+    el.privateOpenBtn.onclick = () => { const name = (el.privateUserInput?.value || "").trim(); if (!name) return; state.socket.emit("open-private-by-name", { username: name }); };
+    el.roomActionsBtn.onclick = () => { const st = state.roomState; if (!st) return; alert("Phòng hiện tại có: " + (st.controls.canRename ? "đổi tên, " : "") + (st.controls.canChangePassword ? "đổi mật khẩu, " : "") + (st.controls.canHide ? "ẩn/hiện, " : "") + (st.controls.canToggleApproval ? "bật/tắt duyệt, " : "") + (st.controls.canTransfer ? "chuyển trưởng, " : "") + (st.controls.canDelete ? "xóa nhóm" : "")); };
+    el.attachBtn.onclick = () => el.fileInput.click();
+    el.folderBtn.onclick = () => el.folderInput.click();
+    el.fileInput.addEventListener("change", async () => { const files = Array.from(el.fileInput.files || []); if (!files.length) return; try { const attachments = files.length === 1 ? await uploadFile(files[0]) : await uploadFiles(files); const text = el.messageInput.value.trim(); const payload = { room: state.currentRoom, message: text, attachments, replyToId: state.replyTo?.id || null }; if (state.privateTarget) state.socket.emit("send-private", { toUserId: state.privateTarget.id, ...payload }); else state.socket.emit("send-message", payload); el.messageInput.value=""; clearReply(); } catch(err){ alert(err.message || "Không thể gửi file"); } finally { el.fileInput.value=""; } });
+    el.folderInput.addEventListener("change", async () => { const files = Array.from(el.folderInput.files || []); if (!files.length) return; try { const attachments = await uploadFolder(files); const text = el.messageInput.value.trim(); const payload = { room: state.currentRoom, message: text, attachments, replyToId: state.replyTo?.id || null }; if (state.privateTarget) state.socket.emit("send-private", { toUserId: state.privateTarget.id, ...payload }); else state.socket.emit("send-message", payload); el.messageInput.value=""; clearReply(); } catch(err){ alert(err.message || "Không thể gửi thư mục"); } finally { el.folderInput.value=""; } });
+    el.messageInput.addEventListener("input", () => { el.messageInput.style.height="auto"; el.messageInput.style.height = Math.min(el.messageInput.scrollHeight, 160) + "px"; triggerTyping(); });
+    el.messageInput.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendCurrentMessage(); } });
+    el.emojiBar.addEventListener("click", (e) => { if (e.target.classList.contains("emoji")) insertEmoji(e.target.textContent); });
+    const dz = el.dropzone; ["dragenter","dragover"].forEach(evt => dz.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add("dragover"); })); ["dragleave","drop"].forEach(evt => dz.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove("dragover"); }));
+    dz.addEventListener("drop", async (e) => { const files = Array.from(e.dataTransfer.files || []); if (!files.length) return; try { const hasFolder = files.some(f => (f.webkitRelativePath || "").includes("/")); const attachments = hasFolder ? await uploadFolder(files) : files.length === 1 ? await uploadFile(files[0]) : await uploadFiles(files); const text = el.messageInput.value.trim(); const payload = { room: state.currentRoom, message: text, attachments, replyToId: state.replyTo?.id || null }; if (state.privateTarget) state.socket.emit("send-private", { toUserId: state.privateTarget.id, ...payload }); else state.socket.emit("send-message", payload); el.messageInput.value=""; clearReply(); } catch(err){ alert(err.message || "Không thể gửi dữ liệu"); }});
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { clearReply(); clearEdit(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") { e.preventDefault(); el.searchInput.focus(); } });
+
+    function renderSearchResults(results){ el.searchResults.innerHTML=""; if (!results.length){ el.searchResults.innerHTML = '<div class="small">Không tìm thấy kết quả.</div>'; return; } results.forEach(m => { const d=document.createElement("div"); d.className="search-result"; d.innerHTML = `<div><b>${esc(m.sender_name)}</b> <span class="small">${esc(fmtTime(m.created_at))}</span></div><div class="small">${esc((m.message || "[đính kèm]").slice(0, 140))}</div>`; d.onclick = () => scrollToMessage(m.id); el.searchResults.appendChild(d); }); }
+    function init(){ syncAuthTabs(); if (state.token){ showApp(); openSocket(state.token); } else { el.hintText.textContent = "Hãy đăng nhập hoặc đăng ký để bắt đầu."; } updateComposerState(); }
+    init();
+  </script>
+</body>
+</html>
